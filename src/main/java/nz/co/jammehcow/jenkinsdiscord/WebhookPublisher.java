@@ -51,12 +51,9 @@ public class WebhookPublisher extends Notifier {
             changesList.append(formatSCMChange(en));
         }
 
-        StringBuilder artifacts = new StringBuilder();
-
-        for (Object a : build.getArtifacts()) {
-            Run.Artifact artifact = (Run.Artifact) a;
-            artifacts.append(" - ").append(globalConfig.getUrl()).append(build.getUrl()).append("artifact/").append(artifact.getHref()).append("\n");
-        }
+        String buildUrl = globalConfig.getUrl() + build.getUrl();
+        String artifactsUrl = buildUrl + "artifact/";
+        String consoleUrl =  buildUrl + "console";
 
         boolean buildStatus = build.getResult().isBetterOrEqualTo(Result.SUCCESS);
 
@@ -65,11 +62,12 @@ public class WebhookPublisher extends Notifier {
         wh.setDescription(
                 "**Build:**  #" + build.getId() +
                 "\n**Status:**  " + (build.getResult().toString().toLowerCase()) +
-                ((changesList.length() != 0) ? "\n**Changes:**\n" + changesList.toString() : "\n*No changes.*\n") +
-                ((artifacts.length() != 0) ? "\n**Artifacts:**\n" + artifacts.toString() : "*No artifacts to be found.*")
+                "\n**Log:**  " + consoleUrl +
+                "\n**Download:**\n" + artifactsUrl +
+                ((changesList.length() != 0) ? "\n**Changes:**\n" + changesList.toString() : "")
         );
         wh.setStatus(buildStatus);
-        wh.setURL(globalConfig.getUrl() + build.getUrl());
+        wh.setURL(buildUrl);
         wh.setFooter("Jenkins v" + build.getHudsonVersion() + ", " + getDescriptor().getDisplayName() + " v" + getDescriptor().getVersion());
 
         try { wh.send(); }
@@ -103,6 +101,6 @@ public class WebhookPublisher extends Notifier {
     }
 
     private static String formatSCMChange(ChangeLogSet.Entry entry) {
-        return "   - ``" + entry.getCommitId().substring(0, 6) + "`` *" + entry.getMsg() + " - " + entry.getAuthor().getFullName() + "*\n";
+        return "   - ``" + entry.getCommitId() + "`` *" + entry.getMsg() + " - " + entry.getAuthor().getFullName() + "*\n";
     }
 }
